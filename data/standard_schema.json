@@ -1,0 +1,42 @@
+{
+  "fields": [
+    {
+      "name": "patient_id",
+      "type": "string",
+      "description": "患者唯一标识，格式为P+三位数字",
+      "standard_values": null
+    },
+    {
+      "name": "gender",
+      "type": "string",
+      "description": "性别",
+      "standard_values": ["男", "女", "未知"]
+    },
+    {
+      "name": "age",
+      "type": "integer",
+      "description": "年龄（岁），范围0-120",
+      "standard_values": null,
+      "min": 0,
+      "max": 120
+    },
+    {
+      "name": "dept_name",
+      "type": "string",
+      "description": "科室名称",
+      "standard_values": ["内科", "外科", "儿科", "妇科", "急诊科"]
+    },
+    {
+      "name": "drug_name",
+      "type": "string",
+      "description": "药品通用名（去除剂型后缀）",
+      "standard_values": null
+    },
+    {
+      "name": "diagnosis_code",
+      "type": "string",
+      "description": "ICD-10诊断代码，格式为字母+2位数字，可选小数点及后续",
+      "standard_values": null
+    }
+  ]
+}
