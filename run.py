@@ -10,9 +10,9 @@ sys.path.insert(0, BASE_DIR)
 
 from config import API_KEY, API_URL, MODEL
 from src.etl_pipeline import ETLPipeline
-from src.quality_reporter import QualityReporter
-from src.rule_generator import RuleGenerator
-from src.logger import section, step, ok, warn, start_timer, done
+from src.local.quality_reporter import QualityReporter
+from src.llm.rule_generator import RuleGenerator
+from src.local.logger import section, step, ok, warn, start_timer, done
 
 
 def generate_dirty_data(output_path: str, n: int = 150):
@@ -509,11 +509,10 @@ def main():
     pipeline = ETLPipeline(
         schema_path,
         API_KEY,
-        skip_agent=no_api_key,
+        skip_llm_refinement=no_api_key,
         rules_path=rules_path,
         api_url=API_URL,
         model=MODEL,
-        max_workers=10,
         verbose=False,
     )
     cleaned_df = pipeline.run(dirty_path, cleaned_path)

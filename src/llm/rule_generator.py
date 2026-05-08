@@ -4,7 +4,7 @@ import json
 import re
 import requests
 import pandas as pd
-from src.logger import step, ok, safe_print
+from src.local.logger import step, ok, safe_print
 
 
 GENERATOR_PROMPT = """根据 Schema 定义和你的医学知识，为以下数据生成清洗规则。
@@ -156,19 +156,40 @@ class RuleGenerator:
 
     @staticmethod
     def _normalize_structure(rules: dict, schema_path: str = None) -> dict:
-        """Ensure every Schema field has a map entry and inference is structured."""
+        """Ensure every Schema field has a map entry and inference is structured.
+        
+        Supports both formats:
+        - LLM output: {"gender": {"M": "男", ...}, ...}
+        - Expected: {"gender": {"map": {"M": "男", ...}}, ...}
+        """
         if not isinstance(rules, dict):
             return {}
 
+        # Convert LLM output format to expected format
+        normalized = {}
+        for key, value in rules.items():
+            if key == "inference":
+                normalized[key] = value if isinstance(value, dict) else {}
+            elif isinstance(value, dict):
+                if "map" in value:
+                    # Already in correct format
+                    normalized[key] = value
+                else:
+                    # Convert LLM format {"脏值": "标准值"} to {"map": {...}}
+                    normalized[key] = {"map": value}
+            else:
+                normalized[key] = {"map": {}}
+
+        # Ensure all schema fields have an entry
         if schema_path:
             with open(schema_path, encoding="utf-8") as f:
                 schema = json.load(f)
             expected = {f["name"] for f in schema.get("fields", []) if f["name"] != "patient_id"}
             for field in expected:
-                if field not in rules or not isinstance(rules.get(field), dict) or "map" not in rules[field]:
-                    rules[field] = {"map": {}}
+                if field not in normalized:
+                    normalized[field] = {"map": {}}
 
-        if "inference" not in rules or not isinstance(rules["inference"], dict):
-            rules["inference"] = {}
+        if "inference" not in normalized:
+            normalized["inference"] = {}
 
-        return rules
+        return normalized

@@ -9,8 +9,8 @@
     {
       "name": "gender",
       "type": "string",
-      "description": "性别",
-      "standard_values": ["男", "女", "未知"]
+      "description": "性别。null表示缺失或未知",
+      "standard_values": ["男", "女"]
     },
     {
       "name": "age",

@@ -45,7 +45,23 @@ class RuleCleaner:
                     mapped = None
                 result[name] = self._clean_age(mapped if mapped is not None else raw)
             elif name in self.field_maps:
-                result[name] = self.field_maps[name].get(str(raw).strip().lower())
+                raw_str = str(raw).strip()
+                mapped = self.field_maps[name].get(raw_str.lower())
+                if mapped is not None:
+                    # 映射表中有匹配，使用映射值
+                    result[name] = mapped
+                else:
+                    # 映射表中没有匹配
+                    std_vals = field.get("standard_values")
+                    if std_vals is None:
+                        # 字段没有预定义标准值列表，保留原值（只要不是空值）
+                        result[name] = raw_str if raw_str else None
+                    elif raw_str in std_vals:
+                        # 原值本身就是标准值，保留原值
+                        result[name] = raw_str
+                    else:
+                        # 既不在映射表中，也不是标准值，设为 None
+                        result[name] = None
             else:
                 result[name] = None
         return result

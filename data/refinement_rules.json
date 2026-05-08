@@ -1,0 +1,14 @@
+{
+  "missing_values": {
+    "drug_name": {
+      "nan": null,
+      "-": null,
+      "/": null
+    },
+    "diagnosis_code": {
+      "nan": null
+    }
+  },
+  "uncertain_values": {},
+  "type_fixes": {}
+}

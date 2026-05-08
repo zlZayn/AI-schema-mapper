@@ -1,0 +1,38 @@
+{
+  "total_rows": 150,
+  "fields": {
+    "patient_id": {
+      "completeness_pct": 100.0,
+      "non_null_count": 150,
+      "null_count": 0
+    },
+    "gender": {
+      "completeness_pct": 60.0,
+      "non_null_count": 90,
+      "null_count": 60,
+      "compliance_pct": 60.0
+    },
+    "age": {
+      "completeness_pct": 52.0,
+      "non_null_count": 78,
+      "null_count": 72
+    },
+    "dept_name": {
+      "completeness_pct": 75.33,
+      "non_null_count": 113,
+      "null_count": 37,
+      "compliance_pct": 75.33
+    },
+    "drug_name": {
+      "completeness_pct": 92.67,
+      "non_null_count": 139,
+      "null_count": 11
+    },
+    "diagnosis_code": {
+      "completeness_pct": 91.33,
+      "non_null_count": 137,
+      "null_count": 13
+    }
+  },
+  "overall_completeness_pct": 78.55
+}
