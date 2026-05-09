@@ -1,6 +1,6 @@
 # Schema Mapper - 医疗数据智能清洗系统
 
-基于 LLM 的智能 ETL 清洗流水线，通过"AI 生成规则 + 本地执行"的架构，实现极低 Token 消耗的高效数据清洗。
+基于 LLM 的智能数据清洗流水线，通过"AI 生成规则 + 本地执行"的架构，实现极低 Token 消耗的高效数据清洗。
 
 ## 核心特性
 
@@ -183,7 +183,7 @@ pipeline = ETLPipeline(
 ## 了解更多
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) - 架构设计、Token优化、扩展指南
-- [ETL_AGENT_WORKFLOW.md](ETL_AGENT_WORKFLOW.md) - 完整工作流程、决策说明
+- [WORKFLOW.md](WORKFLOW.md) - 完整工作流程、决策说明
 
 ## License
 

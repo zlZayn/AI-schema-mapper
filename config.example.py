@@ -1,4 +1,4 @@
-"""API configuration for the ETL pipeline.
+"""API configuration for the Schema Mapper pipeline.
 
 Copy this file to config.py and fill in your own API key:
     cp config.example.py config.py

@@ -68,7 +68,7 @@ def main():
         generator.run(dirty_path, rules_path, schema_path, cache_path)
 
     # Step 3
-    section("[3/4]  执行 ETL 清洗")
+    section("[3/4]  执行数据清洗")
     pipeline = ETLPipeline(
         schema_path,
         API_KEY,

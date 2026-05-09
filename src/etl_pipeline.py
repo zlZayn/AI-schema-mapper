@@ -1,4 +1,4 @@
-"""Main ETL pipeline orchestrator."""
+"""Main pipeline orchestrator for Schema Mapper."""
 
 import json
 
