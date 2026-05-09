@@ -22,35 +22,43 @@ def record(name: str, prompt_tokens: int, completion_tokens: int):
     _records.append(
         {
             "name": name,
-            "tokens": prompt_tokens + completion_tokens,
+            "prompt": prompt_tokens,
+            "completion": completion_tokens,
             "cost": cost,
         }
     )
 
 
+def _pad(s: str, width: int) -> str:
+    extra = sum(1 for c in s if ord(c) > 127)
+    return s + " " * max(0, width - len(s) - extra)
+
+
 def summary() -> str:
     """Return a formatted cost summary table."""
-    if not _records:
-        return "  (no API calls)"
-
-    def pad(s, width):
-        extra = sum(1 for c in s if ord(c) > 127)
-        return s + " " * (width - len(s) - extra)
-
     lines = []
-    hdr = f"  {'name':<16s} {'tokens':>10s} {'cost':>10s}"
+    hdr = f"  {'name':<16s} {'in':>8s} {'out':>8s} {'cost':>10s}"
     lines.append(hdr)
-    lines.append(f"  {'-' * 16} {'-' * 10} {'-' * 10}")
+    lines.append(f"  {'-' * 16} {'-' * 8} {'-' * 8} {'-' * 10}")
 
-    total_tokens = 0
-    total_cost = 0.0
-    for r in _records:
-        lines.append(f"  {r['name']:<16s} {r['tokens']:>10d} {r['cost']:>10.6f}")
-        total_tokens += r["tokens"]
-        total_cost += r["cost"]
+    total_prompt = 0
+    total_completion = 0
+    total_cost_val = 0.0
+    if not _records:
+        lines.append(f"  {'(no API calls)':<16s} {'0':>8s} {'0':>8s} {'0':>10s}")
+    else:
+        for r in _records:
+            lines.append(
+                f"  {_pad(r['name'], 16)} {r['prompt']:>8d} {r['completion']:>8d} {r['cost']:>10.6f}"
+            )
+            total_prompt += r["prompt"]
+            total_completion += r["completion"]
+            total_cost_val += r["cost"]
 
-    lines.append(f"  {'-' * 16} {'-' * 10} {'-' * 10}")
-    lines.append(f"  {'total':<16s} {total_tokens:>10d} {total_cost:>10.6f}")
+    lines.append(f"  {'-' * 16} {'-' * 8} {'-' * 8} {'-' * 10}")
+    lines.append(
+        f"  {'total':<16s} {total_prompt:>8d} {total_completion:>8d} {total_cost_val:>10.6f}"
+    )
     return "\n".join(lines)
 
 
