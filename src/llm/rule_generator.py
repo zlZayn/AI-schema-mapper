@@ -2,9 +2,11 @@
 
 import json
 import re
-import requests
+from openai import OpenAI
 import pandas as pd
 from src.local.logger import step, ok, safe_print
+from src.cache import fingerprint, schema_hash, load_cache, save_cache
+from src.cost_tracker import record
 
 
 GENERATOR_PROMPT = """根据 Schema 定义和你的医学知识，为以下数据生成清洗规则。
@@ -42,12 +44,14 @@ class RuleGenerator:
     def __init__(
         self,
         api_key: str,
-        api_url: str = "https://token-plan-cn.xiaomimimo.com/v1/chat/completions",
-        model: str = "mimo-v2-pro",
+        base_url: str = "https://api.deepseek.com/v1",
+        model: str = "deepseek-v4-flash",
     ):
-        self.api_key = api_key
-        self.api_url = api_url
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.model = model
+
+    # Columns that are pass-through and should not affect the cache fingerprint
+    PASS_THROUGH_COLUMNS: set[str] = {"patient_id"}
 
     def scan_unique_values(self, csv_path: str) -> dict:
         df = pd.read_csv(csv_path)
@@ -76,54 +80,60 @@ class RuleGenerator:
             target_info=target_info,
             unique_values=json.dumps(unique_values, ensure_ascii=False, indent=2),
         )
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": self.model,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.0,
-            "stream": True,
-        }
         step("生成映射规则...")
-        resp = requests.post(
-            self.api_url, headers=headers, json=payload, timeout=120, stream=True
+        stream = self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
+            stream=True,
+            stream_options={"include_usage": True},
         )
-        resp.raise_for_status()
 
         full_content = ""
-        for line in resp.iter_lines():
-            if not line:
-                continue
-            line = line.decode("utf-8")
-            if not line.startswith("data: "):
-                continue
-            data = line[6:]
-            if data == "[DONE]":
-                break
-            try:
-                chunk = json.loads(data)
-                choices = chunk.get("choices", [])
-                if not choices:
-                    continue
-                delta = choices[0].get("delta", {})
-                text = delta.get("content", "")
-                if text:
-                    safe_print(text)
-                    full_content += text
-            except (json.JSONDecodeError, KeyError, IndexError):
-                continue
+        usage = None
+        for chunk in stream:
+            delta = chunk.choices[0].delta if chunk.choices else None
+            text = delta.content if delta and delta.content else ""
+            if text:
+                safe_print(text)
+                full_content += text
+            if chunk.usage:
+                usage = chunk.usage
 
         print()
+        if usage:
+            record("rule_generator", usage.prompt_tokens, usage.completion_tokens)
         return self._extract_json(full_content)
 
-    def run(self, csv_path: str, output_path: str, schema_path: str = None) -> dict:
+    def run(
+        self,
+        csv_path: str,
+        output_path: str,
+        schema_path: str = None,
+        cache_path: str = None,
+    ) -> dict:
         step("扫描唯一值...")
         unique_values = self.scan_unique_values(csv_path)
 
+        # Check cache
+        if cache_path and schema_path:
+            fp = fingerprint(unique_values, exclude_columns=self.PASS_THROUGH_COLUMNS)
+            sh = schema_hash(schema_path)
+            cached = load_cache(cache_path, sh, fp)
+            if cached:
+                ok("缓存命中，跳过 LLM 调用")
+                rules = cached.get("auto_rules", cached)
+                with open(output_path, "w", encoding="utf-8") as f:
+                    json.dump(rules, f, ensure_ascii=False, indent=2)
+                ok(f"规则已保存 ({len(rules)} 字段) -> {output_path}")
+                return rules
+
         rules = self.generate_rules(unique_values, schema_path)
         rules = self._normalize_structure(rules, schema_path)
+
+        # Save to cache
+        if cache_path and schema_path:
+            save_cache(cache_path, sh, fp, {"auto_rules": rules})
 
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(rules, f, ensure_ascii=False, indent=2)
@@ -147,8 +157,8 @@ class RuleGenerator:
         except json.JSONDecodeError:
             pass
         # Fallback: strip trailing commas
-        cleaned = re.sub(r',\s*}', '}', raw)
-        cleaned = re.sub(r',\s*]', ']', cleaned)
+        cleaned = re.sub(r",\s*}", "}", raw)
+        cleaned = re.sub(r",\s*]", "]", cleaned)
         try:
             return json.loads(cleaned)
         except json.JSONDecodeError:
@@ -157,7 +167,7 @@ class RuleGenerator:
     @staticmethod
     def _normalize_structure(rules: dict, schema_path: str = None) -> dict:
         """Ensure every Schema field has a map entry and inference is structured.
-        
+
         Supports both formats:
         - LLM output: {"gender": {"M": "男", ...}, ...}
         - Expected: {"gender": {"map": {"M": "男", ...}}, ...}
@@ -184,7 +194,9 @@ class RuleGenerator:
         if schema_path:
             with open(schema_path, encoding="utf-8") as f:
                 schema = json.load(f)
-            expected = {f["name"] for f in schema.get("fields", []) if f["name"] != "patient_id"}
+            expected = {
+                f["name"] for f in schema.get("fields", []) if f["name"] != "patient_id"
+            }
             for field in expected:
                 if field not in normalized:
                     normalized[field] = {"map": {}}

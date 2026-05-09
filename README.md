@@ -1,4 +1,4 @@
-# ETL Agent - 医疗数据智能清洗系统
+# Schema Mapper - 医疗数据智能清洗系统
 
 基于 LLM 的智能 ETL 清洗流水线，通过"AI 生成规则 + 本地执行"的架构，实现极低 Token 消耗的高效数据清洗。
 
@@ -23,24 +23,27 @@ pip install -r requirements.txt
 
 ```python
 API_KEY = "your-api-key"
-API_URL = "https://api.deepseek.com/v1/chat/completions"
+API_BASE_URL = "https://api.deepseek.com/v1"
 MODEL = "deepseek-v4-flash"
 ```
 
 ### 3. 运行
 
 ```bash
-python run.py
+python run.py            # 执行全流程（使用缓存）
+python run.py --no-cache # 强制重新调用 LLM，不使用缓存
 ```
 
 输出文件:
 - `output/final_cleaned.csv` - 清洗后的数据
 - `output/quality_report.json` - 质量报告
 
+运行结束时会输出 API 费用汇总（token 消耗和成本）。
+
 ## 项目结构
 
 ```
-etl-agent/
+AI-schema-mapper/
 ├── src/                          # 源代码
 │   ├── llm/                      # LLM 层: 调用 API 生成规则
 │   │   ├── rule_generator.py     # 第一轮: 生成业务映射规则
@@ -50,16 +53,21 @@ etl-agent/
 │   │   ├── final_polisher.py     # 最终整理
 │   │   ├── quality_reporter.py   # 质量报告
 │   │   └── logger.py             # 日志工具
-│   └── pipeline.py               # 流程编排器
+│   ├── cache.py                  # 规则缓存（fingerprint + schema_hash）
+│   ├── cost_tracker.py           # API 费用追踪
+│   ├── data_generator.py         # 测试数据生成
+│   └── etl_pipeline.py           # 流程编排器
 ├── data/                         # 数据目录
 │   ├── standard_schema.json      # Schema 定义
 │   ├── super_dirty_data.csv      # 输入脏数据
 │   ├── auto_rules.json           # 生成的规则(自动) `[AI生成]`
-│   └── refinement_rules.json     # 整理规则(自动) `[AI生成]`
+│   ├── refinement_rules.json     # 整理规则(自动) `[AI生成]`
+│   └── .rule_cache.json          # 规则缓存文件（自动生成）
 ├── output/                       # 输出目录
 │   ├── final_cleaned.csv         # 清洗结果
 │   └── quality_report.json       # 质量报告
 ├── config.py                     # 配置文件
+├── config.example.py             # 配置模板
 ├── run.py                        # 入口脚本
 ├── requirements.txt              # 依赖
 ├── README.md                     # 本文档
@@ -144,6 +152,18 @@ etl-agent/
 - `standard_values`: 标准值列表(可选)
 - `min`/`max`: 数值范围(可选)
 
+## 缓存机制
+
+规则缓存基于两个维度判断是否命中：
+- **fingerprint**: 各列唯一值排序后哈希（数据不变 → 指纹不变）
+- **schema_hash**: Schema 文件内容哈希（Schema 不变 → hash 不变）
+
+两者都匹配时直接复用缓存，跳过 LLM 调用。缓存文件：`data/.rule_cache.json`
+
+## 费用追踪
+
+每次 API 调用后自动记录 token 消耗，运行结束时输出费用汇总。定价基于 DeepSeek API（输入 1.0 元/百万 tokens，输出 2.0 元/百万 tokens）。
+
 ## 配置参数
 
 `run.py` 中的可调参数:
@@ -154,7 +174,7 @@ pipeline = ETLPipeline(
     api_key=API_KEY,
     skip_llm_refinement=False,  # True=跳过第二轮 LLM
     rules_path="data/auto_rules.json",
-    api_url=API_URL,
+    base_url=API_BASE_URL,
     model=MODEL,
     verbose=False,              # True=打印详细日志
 )

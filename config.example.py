@@ -5,5 +5,5 @@ Copy this file to config.py and fill in your own API key:
 """
 
 API_KEY = "sk-your-deepseek-api-key-here"
-API_URL = "https://api.deepseek.com/v1/chat/completions"
+API_BASE_URL = "https://api.deepseek.com/v1"
 MODEL = "deepseek-v4-flash"

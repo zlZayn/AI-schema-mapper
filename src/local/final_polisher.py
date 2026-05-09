@@ -25,7 +25,6 @@ class FinalPolisher:
             "nan": None,
             "NaN": None,
             "NULL": None,
-            "null": None,
             "None": None,
             "none": None,
             "N/A": None,
@@ -36,7 +35,6 @@ class FinalPolisher:
         # Normalize uncertain values to standard "未知"
         "uncertain_values": {
             "不详": "未知",
-            "未填": "未知",
             "未填": "未知",
             "保密": "未知",
             "???": "未知",

@@ -16,9 +16,10 @@ class ETLPipeline:
         api_key: str,
         skip_llm_refinement: bool = False,
         rules_path: str | None = None,
-        api_url: str = None,
+        base_url: str = None,
         model: str = None,
         verbose: bool = False,
+        cache_path: str = None,
     ):
         self.schema_path = schema_path
         with open(schema_path, encoding="utf-8") as f:
@@ -29,7 +30,7 @@ class ETLPipeline:
         self.verbose = verbose
 
         if not skip_llm_refinement:
-            kwargs = {"api_url": api_url, "model": model, "verbose": verbose}
+            kwargs = {"base_url": base_url, "model": model, "verbose": verbose, "cache_path": cache_path}
             self.rule_refiner = LLMRuleRefiner(
                 schema_path,
                 api_key,
@@ -146,18 +147,20 @@ class ETLPipeline:
                 )
 
                 for target_field, inferred in targets.items():
-                    rule_key = (source_field, cleaned_source_val, target_field, inferred)
+                    rule_key = (
+                        source_field,
+                        cleaned_source_val,
+                        target_field,
+                        inferred,
+                    )
                     rule_applied = False
 
                     for row in rows:
                         current_val = row.get(target_field)
-                        should_apply = (
-                            row.get(source_field) == cleaned_source_val
-                            and (
-                                current_val is None
-                                or current_val == ""
-                                or str(current_val) in uncertain_values
-                            )
+                        should_apply = row.get(source_field) == cleaned_source_val and (
+                            current_val is None
+                            or current_val == ""
+                            or str(current_val) in uncertain_values
                         )
                         if should_apply:
                             row[target_field] = inferred

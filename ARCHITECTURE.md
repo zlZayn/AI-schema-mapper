@@ -1,4 +1,4 @@
-# ETL Agent 架构设计
+# Schema Mapper 架构设计
 
 > 本文档面向开发者: 详细说明架构设计、Token 优化策略和扩展指南。普通用户请查看 [README.md](./README.md) 了解快速开始。
 
@@ -74,6 +74,9 @@ Layer 5: 质量报告层 `[本地]`
 | `local/final_polisher.py` | `[本地]` | 最终整理，统一格式 | 无 |
 | `local/quality_reporter.py` | `[本地]` | 统计完整度、合规率 | 无 |
 | `local/logger.py` | `[本地]` | 日志输出工具 | 无 |
+| `cache.py` | `[本地]` | 规则缓存（fingerprint + schema_hash） | 无 |
+| `cost_tracker.py` | `[本地]` | API 费用追踪 | 无 |
+| `data_generator.py` | `[本地]` | 测试数据生成 | 无 |
 | `etl_pipeline.py` | `[本地]` | 协调各层执行 | 无 |
 
 **命名规则**:
@@ -105,7 +108,7 @@ Layer 5: 质量报告层 `[本地]`
 
 **数学对比**（150行数据）:
 - 传统方案: 150 × 200 = **30,000 tokens**
-- ETL Agent: 500 + (30 × 200) = **6,500 tokens** (节省 78%)
+- Schema Mapper: 500 + (30 × 200) = **6,500 tokens** (节省 78%)
 
 ### 实际测试数据（150行）
 
@@ -203,10 +206,32 @@ AI 生成的规则只包含**需要转换**的非标准值（如 `"甲硝唑片0
 
 ## 性能优化点
 
-1. **规则缓存**: `auto_rules.json` `[AI生成]` 和 `refinement_rules.json` `[AI生成]` 可缓存复用
+1. **规则缓存**: 基于 fingerprint（数据唯一值哈希）+ schema_hash（Schema 内容哈希），数据和 Schema 不变时跳过 LLM 调用
 2. **架构升级**: 从"AI 逐行清洗"改为"AI 生成规则 + 本地执行"，AI 调用从 140+ 次降至 1-2 次
 3. **提前过滤**: 仅传递唯一值给 AI，而非完整数据集
 4. **本地优先**: 100% 的数据处理在本地完成，零 Token 消耗
+
+### 规则缓存
+
+缓存文件：`data/.rule_cache.json`，结构：
+
+```json
+{
+  "schema_hash": "abc123...",
+  "entries": {
+    "fingerprint1": {"auto_rules": {...}, "refinement_rules": {...}}
+  }
+}
+```
+
+- **fingerprint**: 各列唯一值排序后 MD5，拼接再哈希。排除 `patient_id` 等无关列
+- **schema_hash**: Schema 文件内容 MD5。Schema 变更时自动失效
+- **合并写入**: generator 和 refiner 的规则合并到同一个 fingerprint 条目下
+- `python run.py --no-cache` 可清除缓存强制重新调用 LLM
+
+### API 费用追踪
+
+每次 LLM 调用后从 `response.usage` 提取 token 数，累加到全局计费器。运行结束时输出费用汇总表。定价基于 DeepSeek API（输入 1.0 元/百万 tokens，输出 2.0 元/百万 tokens）。
 
 ---
 
@@ -222,7 +247,7 @@ AI 生成的规则只包含**需要转换**的非标准值（如 `"甲硝唑片0
 
 ## 总结
 
-ETL Agent 通过**分层架构**、**命名规范**和**规则驱动**设计，实现了：
+Schema Mapper 通过**分层架构**、**命名规范**和**规则驱动**设计，实现了：
 
 - **清晰的职责分离**: 文件名即知是否调用 API `[AI]` / `[本地]`
 - **极低的 Token 消耗**: LLM 只处理去重后的唯一值和必要的脏行
