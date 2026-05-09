@@ -1,9 +1,9 @@
 {
   "missing_values": {
     "drug_name": {
-      "nan": null,
       "-": null,
-      "/": null
+      "/": null,
+      "nan": null
     },
     "diagnosis_code": {
       "nan": null
