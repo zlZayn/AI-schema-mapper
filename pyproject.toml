@@ -1,0 +1,9 @@
+[project]
+name = "ai-schema-mapper"
+version = "0.1.0"
+description = "AI-driven ETL schema mapping and data cleaning"
+requires-python = ">=3.11"
+dependencies = [
+    "openai>=1.0",
+    "pandas>=2.0",
+]
