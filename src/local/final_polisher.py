@@ -67,15 +67,21 @@ class FinalPolisher:
         self.rules = self._load_rules(polish_rules_path)
         self._build_field_lookup()
 
+    @staticmethod
+    def _deep_merge(base: dict, override: dict) -> dict:
+        merged = base.copy()
+        for key, value in override.items():
+            if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+                merged[key] = {**merged[key], **value}
+            else:
+                merged[key] = value
+        return merged
+
     def _load_rules(self, rules_path: str | None) -> dict:
-        """Load polish rules from file or use defaults."""
         if rules_path:
             with open(rules_path, encoding="utf-8") as f:
                 custom_rules = json.load(f)
-            # Merge with defaults
-            merged = self.DEFAULT_RULES.copy()
-            merged.update(custom_rules)
-            return merged
+            return self._deep_merge(self.DEFAULT_RULES, custom_rules)
         return self.DEFAULT_RULES.copy()
 
     def _build_field_lookup(self):
