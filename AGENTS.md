@@ -11,12 +11,11 @@
 - `uv sync` · `uv run python run.py`（全流程/用缓存）· `uv run python run.py --no-cache`（强制调用 LLM）
 
 ## 验证快照（上次实际跑过）
-- pytest: no tests ran（项目无 tests/ 目录，exit 1）
+- pytest 9.1.1（dev 依赖组）: no tests ran（项目无 tests/ 目录，exit 5）
 - 冒烟导入 `uv run python -c "from src.etl_pipeline import ETLPipeline"`: ok
 
 ## 待办
 - [ ] 补 tests/ 目录与首组用例
-- [ ] 清理 main.py 脚手架残留（确认无引用后删除）
 
 ## 活跃坑
 - config.py 含真实 API Key，已被 .gitignore 排除：勿提交、勿外传
