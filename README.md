@@ -75,7 +75,6 @@ AI-schema-mapper/
 │   └── quality_report.json        # 质量报告
 ├── config.py                      # 配置文件
 ├── config.example.py              # 配置模板
-├── main.py                        # uv 初始化脚手架残留（未使用）
 ├── run.py                         # 入口脚本
 ├── AGENTS.md                      # 维护索引（开发者/维护者入口）
 ├── pyproject.toml                 # 依赖与元数据（uv）
