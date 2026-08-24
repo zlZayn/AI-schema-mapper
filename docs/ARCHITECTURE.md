@@ -9,16 +9,16 @@
 ### AI 做一次理解，代码做 N 次执行
 
 **AI 层** `[AI]` (1-2 次 API 调用，极少 Token)
-- Step 1: LLMRuleGenerator - 理解数据分布 → 生成业务映射规则
+- Step 1: RuleGenerator - 理解数据分布 → 生成业务映射规则
 - Step 2: LLMRuleRefiner - 分析残余问题 → 生成整理规则（可选）
 
 ↓
 
 **代码层** `[本地]` (纯本地，N 次执行，零 Token)
-- LocalRuleMapper: 查表替换（毫秒级 × 所有行）
+- RuleCleaner: 查表替换（毫秒级 × 所有行）
 - 跨字段推理: 本地推理（零 Token）
 - 整理规则应用: 本地应用 AI 生成的整理规则（零 Token）
-- LocalFinalPolisher: 最终整理（零 Token）
+- FinalPolisher: 最终整理（零 Token）
 - Schema 校验: 本地检查（零 Token）
 
 **关键洞察**: 数据清洗是确定性的，不需要每行都调用 AI。AI 只需要理解**模式**（pattern），然后代码可以高效地应用这些模式。
@@ -44,7 +44,7 @@ Layer 2: 规则生成层 `[AI]`
 ↓
 
 Layer 3: 清洗执行层 `[本地]`
-- Phase 1: LocalRuleMapper - 查表替换（毫秒级，零Token）
+- Phase 1: RuleCleaner - 查表替换（毫秒级，零Token）
 - Phase 2: 跨字段推断 - 本地推理（零Token）
 - Phase 3: 整理规则应用 - 本地应用 AI 生成的整理规则（零Token）
 - Phase 4: Schema 校验 - 本地检查（零Token）
@@ -101,9 +101,9 @@ Layer 5: 质量报告层 `[本地]`
 
 | 阶段 | 输入数据 | 数据量 | Token 级别 |
 |------|---------|--------|-----------|
-| LLMRuleGenerator | 唯一值列表 | ~100个字符串 | 极少 `[AI]` |
-| LLMRowCleaner | 单行数据 | ~200 tokens/行 | 中等 `[AI]` |
-| LocalFinalPolisher | 唯一值列表 | ~50个字符串 | 极少 `[本地]` |
+| RuleGenerator | 唯一值列表 | ~100个字符串 | 极少 `[AI]` |
+| LLMRowCleaner（早期架构，已移除） | 单行数据 | ~200 tokens/行 | 中等 `[AI]` |
+| FinalPolisher | 唯一值列表 | ~50个字符串 | 极少 `[本地]` |
 | 本地执行 | 完整数据集 | 150行 | **零 Token** `[本地]` |
 
 **数学对比**（150行数据）:
@@ -113,14 +113,14 @@ Layer 5: 质量报告层 `[本地]`
 ### 实际测试数据（150行）
 
 总 AI 调用次数: 1-2 次
-- LLMRuleGenerator: 1 次（生成业务映射规则） `[AI]`
+- RuleGenerator: 1 次（生成业务映射规则） `[AI]`
 - LLMRuleRefiner: 0-1 次（生成整理规则，可选） `[AI, 可选]`
 
 本地执行: 100% 的行 `[本地]`
-- LocalRuleMapper: 150 行（查表替换）
+- RuleCleaner: 150 行（查表替换）
 - 跨字段推断: 150 行（本地计算）
 - 整理规则应用: 150 行（本地执行）
-- LocalFinalPolisher: 150 行（本地整理）
+- FinalPolisher: 150 行（本地整理）
 - Schema 校验: 150 行（本地检查）
 
 ---
@@ -131,16 +131,16 @@ Layer 5: 质量报告层 `[本地]`
 
 原始数据 (CSV)
 ↓
-LLMRuleGenerator `[AI]` → 唯一值列表 → AI
+RuleGenerator `[AI]` → 唯一值列表 → AI
                               ↓
                          `auto_rules.json` `[AI生成]`
                               ↓
 ETLPipeline `[本地]` ←───────────────┘
 ↓
-├── LocalRuleMapper `[本地]`
+├── RuleCleaner `[本地]`
 ├── 跨字段推断 `[本地]`
 ├── Schema 校验 `[本地]`
-└── LocalFinalPolisher `[本地]`
+└── FinalPolisher `[本地]`
     ↓
 `final_cleaned.csv`
 
@@ -148,9 +148,9 @@ ETLPipeline `[本地]` ←───────────────┘
 
 | 组件 | 类型 | 接触数据 | 敏感信息暴露 |
 |------|------|---------|-------------|
-| LLMRuleGenerator | `[AI]` | 唯一值列表 | 低（去重后） |
+| RuleGenerator | `[AI]` | 唯一值列表 | 低（去重后） |
 | LLMRuleRefiner | `[AI]` | 唯一值列表 | 低（去重后，仅残余问题值） |
-| LocalFinalPolisher | `[本地]` | 无（使用默认规则） | 无 |
+| FinalPolisher | `[本地]` | 无（使用默认规则） | 无 |
 
 ---
 
@@ -165,8 +165,8 @@ final_df = pd.DataFrame(rule_results)
 # Phase 3: 你的新清洗层
 final_df = your_new_layer(final_df)
 
-# Phase 4: LocalFinalPolisher
-polisher = LocalFinalPolisher(self.schema_path)
+# Phase 4: FinalPolisher
+polisher = FinalPolisher(self.schema_path)
 final_df = polisher.polish_dataframe(final_df)
 ```
 
@@ -174,17 +174,17 @@ final_df = polisher.polish_dataframe(final_df)
 
 ```python
 # 使用默认规则（零 AI 调用）
-polisher = LocalFinalPolisher("schema.json")
+polisher = FinalPolisher("schema.json")
 
 # 或使用 LLM 生成规则（一次性，极少 Token）
-polisher = LocalFinalPolisher("schema.json", "custom_polish_rules.json")
+polisher = FinalPolisher("schema.json", "custom_polish_rules.json")
 ```
 
 ---
 
 ## 关键实现细节
 
-### RuleMapper 的值保留策略
+### RuleCleaner 的值保留策略
 
 `local/rule_mapper.py` 中的清洗逻辑遵循以下优先级：
 
