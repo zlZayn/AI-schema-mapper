@@ -1,4 +1,4 @@
-# Schema Mapper - 医疗数据智能清洗系统
+# Schema Mapper
 
 基于 LLM 的智能数据清洗流水线，通过"AI 生成规则 + 本地执行"的架构，实现极低 Token 消耗的高效数据清洗。
 
@@ -13,12 +13,13 @@
 
 ### 环境要求
 
-- Python >= 3.11
+- Python >= 3.11（项目锁定 3.12.10，见 `.python-version`）
+- uv（依赖与运行环境管理，安装见 https://docs.astral.sh/uv/）
 
 ### 1. 安装依赖
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 ### 2. 配置 API
@@ -34,8 +35,8 @@ MODEL = "deepseek-v4-flash"
 ### 3. 运行
 
 ```bash
-python run.py            # 执行全流程（使用缓存）
-python run.py --no-cache # 强制重新调用 LLM，不使用缓存
+uv run python run.py            # 执行全流程（使用缓存）
+uv run python run.py --no-cache # 强制重新调用 LLM，不使用缓存
 ```
 
 输出文件:
@@ -48,34 +49,39 @@ python run.py --no-cache # 强制重新调用 LLM，不使用缓存
 
 ```
 AI-schema-mapper/
-├── src/                          # 源代码
-│   ├── llm/                      # LLM 层: 调用 API 生成规则
-│   │   ├── rule_generator.py     # 第一轮: 生成业务映射规则
-│   │   └── rule_refiner.py       # 第二轮: 生成整理规则(可选)
-│   ├── local/                    # 本地层: 零 Token 执行
-│   │   ├── rule_mapper.py        # 查表替换清洗
-│   │   ├── final_polisher.py     # 最终整理
-│   │   ├── quality_reporter.py   # 质量报告
-│   │   └── logger.py             # 日志工具
-│   ├── cache.py                  # 规则缓存（fingerprint + schema_hash）
-│   ├── cost_tracker.py           # API 费用追踪
-│   ├── data_generator.py         # 测试数据生成
-│   └── etl_pipeline.py           # 流程编排器
-├── data/                         # 数据目录
-│   ├── standard_schema.json      # Schema 定义
-│   ├── super_dirty_data.csv      # 输入脏数据
-│   ├── auto_rules.json           # 生成的规则(自动) `[AI生成]`
-│   ├── refinement_rules.json     # 整理规则(自动) `[AI生成]`
-│   └── .rule_cache.json          # 规则缓存文件（自动生成）
-├── output/                       # 输出目录
-│   ├── final_cleaned.csv         # 清洗结果
-│   └── quality_report.json       # 质量报告
-├── config.py                     # 配置文件
-├── config.example.py             # 配置模板
-├── run.py                        # 入口脚本
-├── requirements.txt              # 依赖
-├── README.md                     # 本文档
-└── ARCHITECTURE.md               # 架构设计文档
+├── docs/                          # 设计文档
+│   └── ARCHITECTURE.md            # 架构设计文档
+├── src/                           # 源代码
+│   ├── llm/                       # LLM 层: 调用 API 生成规则
+│   │   ├── rule_generator.py      # 第一轮: 生成业务映射规则
+│   │   └── rule_refiner.py        # 第二轮: 生成整理规则(可选)
+│   ├── local/                     # 本地层: 零 Token 执行
+│   │   ├── rule_mapper.py         # 查表替换清洗
+│   │   ├── final_polisher.py      # 最终整理
+│   │   ├── quality_reporter.py    # 质量报告
+│   │   └── logger.py              # 日志工具
+│   ├── cache.py                   # 规则缓存（fingerprint + schema_hash）
+│   ├── cost_tracker.py            # API 费用追踪
+│   ├── data_generator.py          # 测试数据生成
+│   └── etl_pipeline.py            # 流程编排器
+├── data/                          # 数据目录
+│   ├── standard_schema.json       # Schema 定义
+│   ├── super_dirty_data.csv       # 输入脏数据
+│   ├── auto_rules.json            # 生成的规则(自动) `[AI生成]`
+│   ├── refinement_rules.json      # 整理规则(自动) `[AI生成]`
+│   └── .rule_cache.json           # 规则缓存文件（自动生成）
+├── output/                        # 输出目录
+│   ├── final_cleaned.csv          # 清洗结果
+│   └── quality_report.json        # 质量报告
+├── config.py                      # 配置文件
+├── config.example.py              # 配置模板
+├── main.py                        # uv 初始化脚手架残留（未使用）
+├── run.py                         # 入口脚本
+├── AGENTS.md                      # 维护索引（开发者/维护者入口）
+├── pyproject.toml                 # 依赖与元数据（uv）
+├── uv.lock                        # 依赖锁文件
+├── README.md                      # 本文档
+└── WORKFLOW.md                    # 完整工作流程
 ```
 
 ## 架构说明
@@ -123,7 +129,7 @@ AI-schema-mapper/
 | `local/rule_mapper.py` | `[本地]` | 执行规则映射，查表替换 | 无 |
 | `local/final_polisher.py` | `[本地]` | 最终格式整理 | 无 |
 | `local/quality_reporter.py` | `[本地]` | 生成质量报告 | 无 |
-| `pipeline.py` | `[本地]` | 协调各模块执行 | 无 |
+| `etl_pipeline.py` | `[本地]` | 协调各模块执行 | 无 |
 
 ## Schema 定义
 
@@ -186,7 +192,8 @@ pipeline = ETLPipeline(
 
 ## 了解更多
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) - 架构设计、Token优化、扩展指南
+- [架构设计](docs/ARCHITECTURE.md) - 设计决策、Token 优化、扩展指南
+- [维护索引](AGENTS.md) - 开发者/维护者入口：规则、命令、文档地图
 - [WORKFLOW.md](WORKFLOW.md) - 完整工作流程、决策说明
 
 ## License
