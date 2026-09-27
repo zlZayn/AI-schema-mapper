@@ -1,11 +1,18 @@
 """Rule-based cleaner with dynamically generated or static mappings."""
 
 import json
+from typing import ClassVar
 
 
 class RuleCleaner:
-    IMPORTANT_FIELDS = {"gender", "dept_name", "drug_name", "diagnosis_code", "age"}
-    PASS_THROUGH_FIELDS = {"patient_id"}
+    IMPORTANT_FIELDS: ClassVar[set[str]] = {
+        "gender",
+        "dept_name",
+        "drug_name",
+        "diagnosis_code",
+        "age",
+    }
+    PASS_THROUGH_FIELDS: ClassVar[set[str]] = {"patient_id"}
 
     def __init__(self, schema_path: str, rules_path: str | None = None):
         with open(schema_path, encoding="utf-8") as f:

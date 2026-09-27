@@ -7,16 +7,18 @@ This module provides a lightweight, token-efficient way to standardize cleaned d
 """
 
 import json
+from typing import Any, ClassVar
+
 import pandas as pd
-from typing import Any
-from src.local.logger import step, ok
+
+from src.local.logger import ok, step
 
 
 class FinalPolisher:
     """Apply final polish rules to ensure data consistency and Schema compliance."""
 
     # Default normalization rules (can be overridden by AI-generated rules)
-    DEFAULT_RULES = {
+    DEFAULT_RULES: ClassVar[dict] = {
         # Normalize missing/unknown values
         "missing_values": {
             "null": None,
@@ -176,7 +178,7 @@ class FinalPolisher:
             elif isinstance(value, float):
                 pass  # Will convert below
             elif not isinstance(value, int):
-                raise ValueError
+                raise TypeError
 
             # Remove decimals if configured
             if rules.get("remove_decimals", True):

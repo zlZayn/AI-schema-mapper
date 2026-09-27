@@ -3,10 +3,11 @@
 import json
 
 import pandas as pd
-from src.local.rule_mapper import RuleCleaner
+
 from src.llm.rule_refiner import LLMRuleRefiner
 from src.local.final_polisher import FinalPolisher
-from src.local.logger import step, ok, warn
+from src.local.logger import ok, step, warn
+from src.local.rule_mapper import RuleCleaner
 
 
 class ETLPipeline:
@@ -16,10 +17,10 @@ class ETLPipeline:
         api_key: str,
         skip_llm_refinement: bool = False,
         rules_path: str | None = None,
-        base_url: str = None,
-        model: str = None,
+        base_url: str | None = None,
+        model: str | None = None,
         verbose: bool = False,
-        cache_path: str = None,
+        cache_path: str | None = None,
     ):
         self.schema_path = schema_path
         with open(schema_path, encoding="utf-8") as f:
@@ -60,7 +61,7 @@ class ETLPipeline:
             )
 
             if remaining_values:
-                step(f"发现残余问题值，生成整理规则...")
+                step("发现残余问题值，生成整理规则...")
                 # Generate refinement rules (1 LLM call)
                 refinement_rules = self.rule_refiner.generate_refinement_rules(
                     remaining_values, "data/refinement_rules.json"
@@ -105,16 +106,20 @@ class ETLPipeline:
                 str_val = str(value).strip()
 
                 # Apply missing_values mapping
-                if field_name in missing_values:
-                    if str_val in missing_values[field_name]:
-                        row[field_name] = None
-                        continue
+                if (
+                    field_name in missing_values
+                    and str_val in missing_values[field_name]
+                ):
+                    row[field_name] = None
+                    continue
 
                 # Apply uncertain_values mapping
-                if field_name in uncertain_values:
-                    if str_val in uncertain_values[field_name]:
-                        row[field_name] = uncertain_values[field_name][str_val]
-                        continue
+                if (
+                    field_name in uncertain_values
+                    and str_val in uncertain_values[field_name]
+                ):
+                    row[field_name] = uncertain_values[field_name][str_val]
+                    continue
 
                 # Apply type_fixes
                 if field_name in type_fixes:
@@ -227,17 +232,20 @@ class ETLPipeline:
                             }
                         )
 
-                if dtype == "string" and field.get("standard_values"):
-                    if str(val) not in field["standard_values"]:
-                        warn(
-                            f"Row {idx}: {name}='{val}' not in {field['standard_values']}"
-                        )
-                        violations.append(
-                            {
-                                "row": idx,
-                                "field": name,
-                                "value": val,
-                                "reason": "not_standard",
-                            }
-                        )
+                if (
+                    dtype == "string"
+                    and field.get("standard_values")
+                    and str(val) not in field["standard_values"]
+                ):
+                    warn(
+                        f"Row {idx}: {name}='{val}' not in {field['standard_values']}"
+                    )
+                    violations.append(
+                        {
+                            "row": idx,
+                            "field": name,
+                            "value": val,
+                            "reason": "not_standard",
+                        }
+                    )
         return violations

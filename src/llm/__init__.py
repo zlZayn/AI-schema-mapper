@@ -3,4 +3,4 @@
 from src.llm.rule_generator import RuleGenerator
 from src.llm.rule_refiner import LLMRuleRefiner
 
-__all__ = ["RuleGenerator", "LLMRuleRefiner"]
+__all__ = ["LLMRuleRefiner", "RuleGenerator"]

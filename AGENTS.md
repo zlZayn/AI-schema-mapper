@@ -9,8 +9,11 @@
 
 ## 常用命令（uv 管理，Python 3.12.10）
 - `uv sync` · `uv run python run.py`（全流程/用缓存）· `uv run python run.py --no-cache`（强制调用 LLM）
+- `uv run ruff check .` — Lint（ruff 默认规则集，列宽默认 88）
+- `uv run ruff format .` — 格式化（`--check` 只看不改）
 
 ## 验证快照（上次实际跑过）
+- Ruff 0.16.9（dev 依赖组）: `uv run ruff check .` 0 发现 · `uv run ruff format --check .` 全绿（2026-09-27）
 - pytest 9.1.1（dev 依赖组）: no tests ran（项目无 tests/ 目录，exit 5）
 - 冒烟导入 `uv run python -c "from src.etl_pipeline import ETLPipeline"`: ok
 

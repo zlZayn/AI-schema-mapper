@@ -2,12 +2,14 @@
 
 import json
 import re
-from openai import OpenAI
-import pandas as pd
-from src.local.logger import step, ok, safe_print
-from src.cache import fingerprint, schema_hash, load_cache, save_cache
-from src.cost_tracker import record
+from typing import ClassVar
 
+import pandas as pd
+from openai import OpenAI
+
+from src.cache import fingerprint, load_cache, save_cache, schema_hash
+from src.cost_tracker import record
+from src.local.logger import ok, safe_print, step
 
 GENERATOR_PROMPT = """根据 Schema 定义和你的医学知识，为以下数据生成清洗规则。
 
@@ -51,7 +53,7 @@ class RuleGenerator:
         self.model = model
 
     # Columns that are pass-through and should not affect the cache fingerprint
-    PASS_THROUGH_COLUMNS: set[str] = {"patient_id"}
+    PASS_THROUGH_COLUMNS: ClassVar[set[str]] = {"patient_id"}
 
     def scan_unique_values(self, csv_path: str) -> dict:
         df = pd.read_csv(csv_path)
@@ -59,7 +61,7 @@ class RuleGenerator:
             col: df[col].dropna().astype(str).unique().tolist() for col in df.columns
         }
 
-    def generate_rules(self, unique_values: dict, schema_path: str = None) -> dict:
+    def generate_rules(self, unique_values: dict, schema_path: str | None = None) -> dict:
         # Build target constraints from schema
         target_info = "无附加约束"
         if schema_path:
@@ -109,8 +111,8 @@ class RuleGenerator:
         self,
         csv_path: str,
         output_path: str,
-        schema_path: str = None,
-        cache_path: str = None,
+        schema_path: str | None = None,
+        cache_path: str | None = None,
     ) -> dict:
         step("扫描唯一值...")
         unique_values = self.scan_unique_values(csv_path)
@@ -165,7 +167,7 @@ class RuleGenerator:
             return {}
 
     @staticmethod
-    def _normalize_structure(rules: dict, schema_path: str = None) -> dict:
+    def _normalize_structure(rules: dict, schema_path: str | None = None) -> dict:
         """Ensure every Schema field has a map entry and inference is structured.
 
         Supports both formats:

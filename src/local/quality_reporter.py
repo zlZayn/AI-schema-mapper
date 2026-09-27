@@ -1,6 +1,7 @@
 """Quality reporter: completeness and compliance metrics."""
 
 import json
+
 import pandas as pd
 
 

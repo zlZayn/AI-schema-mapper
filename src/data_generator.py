@@ -1,7 +1,9 @@
 """Generate dirty test data for pipeline validation."""
 
 import random
+
 import pandas as pd
+
 from src.local.logger import step
 
 

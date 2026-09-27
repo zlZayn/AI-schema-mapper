@@ -10,12 +10,13 @@ The AI has freedom to decide WHAT to map, but must follow the output format.
 
 import json
 import re
-from openai import OpenAI
-import pandas as pd
-from src.local.logger import step, ok, safe_print
-from src.cost_tracker import record
-from src.cache import fingerprint, schema_hash, load_cache, save_cache
 
+import pandas as pd
+from openai import OpenAI
+
+from src.cache import fingerprint, load_cache, save_cache, schema_hash
+from src.cost_tracker import record
+from src.local.logger import ok, safe_print, step
 
 REFINER_PROMPT = """你是一个数据整理专家。你的任务是分析经过第一轮清洗后仍然"有问题"的数据值，并生成整理规则。
 
@@ -71,10 +72,10 @@ class LLMRuleRefiner:
         self,
         schema_path: str,
         api_key: str,
-        base_url: str = None,
-        model: str = None,
+        base_url: str | None = None,
+        model: str | None = None,
         verbose: bool = False,
-        cache_path: str = None,
+        cache_path: str | None = None,
     ):
         with open(schema_path, encoding="utf-8") as f:
             self.schema = json.load(f)
@@ -165,7 +166,7 @@ class LLMRuleRefiner:
                 )
                 return {}
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — 覆盖流式调用与落盘，收窄会漏掉非 OSError 的 SDK 异常
             safe_print(f"\n  [LLM] API call failed: {e}")
             return {}
 
@@ -229,10 +230,7 @@ class LLMRuleRefiner:
                     "n/a",
                     "-",
                     "/",
-                ):
-                    problematic.append(str_val)
-                # Include values not in standard values (if defined)
-                elif std_vals and str_val not in std_vals:
+                ) or std_vals and str_val not in std_vals:
                     problematic.append(str_val)
                 # Include values with whitespace issues
                 elif str_val != str(val):

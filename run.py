@@ -13,16 +13,18 @@ SignalChain Data Cleaning Tool
     python run.py --no-cache # 强制重新调用 LLM，不使用缓存
 """
 
+import argparse
 import os
 import sys
-import argparse
-from config import API_KEY, API_BASE_URL, MODEL
-from src.etl_pipeline import ETLPipeline
-from src.local.quality_reporter import QualityReporter
-from src.llm.rule_generator import RuleGenerator
-from src.local.logger import section, step, ok, warn, start_timer, done
-from src.cost_tracker import reset as cost_reset, summary as cost_summary
+
+from config import API_BASE_URL, API_KEY, MODEL
+from src.cost_tracker import reset as cost_reset
+from src.cost_tracker import summary as cost_summary
 from src.data_generator import generate_dirty_data
+from src.etl_pipeline import ETLPipeline
+from src.llm.rule_generator import RuleGenerator
+from src.local.logger import done, ok, section, start_timer, step, warn
+from src.local.quality_reporter import QualityReporter
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
