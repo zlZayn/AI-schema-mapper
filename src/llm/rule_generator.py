@@ -61,7 +61,9 @@ class RuleGenerator:
             col: df[col].dropna().astype(str).unique().tolist() for col in df.columns
         }
 
-    def generate_rules(self, unique_values: dict, schema_path: str | None = None) -> dict:
+    def generate_rules(
+        self, unique_values: dict, schema_path: str | None = None
+    ) -> dict:
         # Build target constraints from schema
         target_info = "无附加约束"
         if schema_path:

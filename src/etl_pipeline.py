@@ -31,7 +31,12 @@ class ETLPipeline:
         self.verbose = verbose
 
         if not skip_llm_refinement:
-            kwargs = {"base_url": base_url, "model": model, "verbose": verbose, "cache_path": cache_path}
+            kwargs = {
+                "base_url": base_url,
+                "model": model,
+                "verbose": verbose,
+                "cache_path": cache_path,
+            }
             self.rule_refiner = LLMRuleRefiner(
                 schema_path,
                 api_key,
@@ -237,9 +242,7 @@ class ETLPipeline:
                     and field.get("standard_values")
                     and str(val) not in field["standard_values"]
                 ):
-                    warn(
-                        f"Row {idx}: {name}='{val}' not in {field['standard_values']}"
-                    )
+                    warn(f"Row {idx}: {name}='{val}' not in {field['standard_values']}")
                     violations.append(
                         {
                             "row": idx,

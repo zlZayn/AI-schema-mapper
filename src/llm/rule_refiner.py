@@ -155,7 +155,12 @@ class LLMRuleRefiner:
             if rules:
                 # Save to cache
                 if self.cache_path and self._schema_hash:
-                    save_cache(self.cache_path, self._schema_hash, fp, {"refinement_rules": rules})
+                    save_cache(
+                        self.cache_path,
+                        self._schema_hash,
+                        fp,
+                        {"refinement_rules": rules},
+                    )
                 with open(output_path, "w", encoding="utf-8") as f:
                     json.dump(rules, f, ensure_ascii=False, indent=2)
                 ok(f"整理规则已保存 -> {output_path}")
@@ -220,17 +225,22 @@ class LLMRuleRefiner:
             for val in unique_vals:
                 str_val = str(val).strip()
                 # Include empty/null-like values
-                if str_val in (
-                    "",
-                    "null",
-                    "None",
-                    "nan",
-                    "NaN",
-                    "N/A",
-                    "n/a",
-                    "-",
-                    "/",
-                ) or std_vals and str_val not in std_vals:
+                if (
+                    str_val
+                    in (
+                        "",
+                        "null",
+                        "None",
+                        "nan",
+                        "NaN",
+                        "N/A",
+                        "n/a",
+                        "-",
+                        "/",
+                    )
+                    or std_vals
+                    and str_val not in std_vals
+                ):
                     problematic.append(str_val)
                 # Include values with whitespace issues
                 elif str_val != str(val):

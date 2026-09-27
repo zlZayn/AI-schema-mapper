@@ -73,7 +73,11 @@ class FinalPolisher:
     def _deep_merge(base: dict, override: dict) -> dict:
         merged = base.copy()
         for key, value in override.items():
-            if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+            if (
+                key in merged
+                and isinstance(merged[key], dict)
+                and isinstance(value, dict)
+            ):
                 merged[key] = {**merged[key], **value}
             else:
                 merged[key] = value
