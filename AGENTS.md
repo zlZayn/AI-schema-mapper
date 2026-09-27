@@ -4,7 +4,7 @@
 - 架构与数据流 → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - 源码职责 / 变更影响路由 → [src/README.md](src/README.md)；子目录规则 → [src/AGENTS.md](src/AGENTS.md)
 - 决策记录 → [.agents/notes/](.agents/notes/)，必须含替代方案
-- 文档双件职责分离：AGENTS 只写规则、README 只写是什么/怎么改
+- 双件分离：AGENTS.md 只写规则，README.md 只写是什么/怎么改
 - 文档动过就跑链接校验（maintenance-flow 技能 check-links.py）
 
 ## 常用命令（uv 管理，Python 3.12.10）
