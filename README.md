@@ -1,5 +1,7 @@
 # Schema Mapper
 
+[![CI](https://github.com/zlZayn/AI-schema-mapper/actions/workflows/ci.yml/badge.svg)](https://github.com/zlZayn/AI-schema-mapper/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 基于 LLM 的智能数据清洗流水线，通过"AI 生成规则 + 本地执行"的架构，实现极低 Token 消耗的高效数据清洗。
 
 ## 核心特性
@@ -198,3 +200,15 @@ pipeline = ETLPipeline(
 ## License
 
 MIT
+
+---
+
+## 许可
+
+- 本仓基于 [MIT 许可](LICENSE) 发布。
+
+## 贡献
+
+- 本仓为个人项目；问题与建议请走 [Issues](https://github.com/zlZayn/AI-schema-mapper/issues)。
+
+维护者文档地图 → 见 [AGENTS.md](AGENTS.md)。
