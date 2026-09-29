@@ -9,7 +9,7 @@
 
 ## 常用命令（uv 管理，Python 3.12.10）
 
-- 本地钩子：`pre-commit install`（每个 clone 一次；本体 `uv tool install pre-commit`）——提交前自动 `ruff check --fix` + `ruff format`；CI 只读跑同一组检查
+- 本地钩子：`pre-commit install`（每个 clone 一次；本体 `uv tool install pre-commit`）——提交前自动 `ruff check --fix` + `ruff format`；CI 只读跑同一组检查；全量跑 `pre-commit run --all-files`；临时跳过 `git commit --no-verify`；定义见 [.pre-commit-config.yaml](.pre-commit-config.yaml)
 - `uv sync` · `uv run python run.py`（全流程/用缓存）· `uv run python run.py --no-cache`（强制调用 LLM）
 - `uv run ruff check .` — Lint（ruff 默认规则集，列宽默认 88）
 - `uv run ruff format .` — 格式化（`--check` 只看不改）
