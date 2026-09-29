@@ -1,6 +1,6 @@
 # 决策：文档类名对齐实际代码，不重命名代码只改文档（2026-08-28）
 
-已实施：是
+状态：生效
 
 ## 问题
 - README.md / docs/ARCHITECTURE.md 使用不存在的类名：LocalRuleMapper、LocalFinalPolisher、LLMRuleGenerator、LLMRowCleaner

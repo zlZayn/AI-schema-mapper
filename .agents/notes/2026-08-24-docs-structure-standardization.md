@@ -1,6 +1,6 @@
 # 决策：架构文档迁入 docs/ 与文档结构标准化（2026-08-24）
 
-已实施：是
+状态：生效
 
 ## 问题
 - 根目录散放 ARCHITECTURE.md，无 docs/、无根 AGENTS.md、无 .agents/notes/
